@@ -52,6 +52,7 @@ mp.events.add('server:loadAccount', async (player, username) => {
     try {
         await server.db.query('SELECT * FROM `accounts` WHERE `username` = ?', [username]).then(([rows]) => {
             player.sqlID = rows[0].ID;
+            player.name = username;
             player.setVariable("loggedIn", true);
         });
     } catch(e) { console.log(e) };
