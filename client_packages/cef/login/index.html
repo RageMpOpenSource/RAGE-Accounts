@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link href="../assets/css/bootstrap.min.css" rel="stylesheet"/>
+        <link href="../assets/css/global-theme.css" rel="stylesheet"/>
+        <link href="style.css" rel="stylesheet"/>
+
+        <script src="../assets/js/jquery-3.2.1.js"></script>
+    </head>
+    <body>
+        <div class="card" id="loginCard">
+            <div class="card-body">
+                <h1 class="text-center">Template Server</h1>
+                <form id="auth-form">
+                    <div class="alert alert-danger short-info" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> Error: Username or Password is too short
+                    </div>
+                    <div class="alert alert-danger incorrect-info" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> Error: Incorrect username or password.
+                    </div>
+                    <div class="alert alert-danger logged" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> Error: Account is currently in use.
+                    </div>
+                    <div class="alert alert-danger banned" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> Error: You are banned
+                    </div>
+                    <div class="form-group">
+                        <label for="loginName">Username</label>
+                        <input type="text" name="username" id="loginName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPass">Password</label>
+                        <input type="password" name="password" id="loginPass" class="form-control" required>
+                    </div>
+                    <button type="submit" id="loginBtn" class="btn btn-success btn-block" onclick="sendAccountInfo(0);">Login</button>
+                    <small>Don't have an account? <a href="register.html">Register here</a></small>
+                </form>
+            </div>
+        </div>
+        <script src="main.js"></script>
+        <script type="text/javascript">
+            $('.alert-danger').hide();
+        </script>
+    </body>
+</html>
