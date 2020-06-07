@@ -16,15 +16,15 @@ mp.colors = {
 }
 
 //  Step 2 - Obtaining and loading config file
-if(!fs.existsSync(__dirname + '/config.json')){
+if(!fs.existsSync(__dirname + '/settings.json')){
     console.log(`${mp.colors.red + 'You do not have a \'config.json\' file setup.'}`);
     process.exit(0);
 } else {
-    mp.config = require('./config.json');
+    mp.settings = require('./settings.json');
 }
 
 //  Step 3 - Load up gamemode assets
-mp.db = require('mysql2/promise').createPool({host: mp.config.db_host, user: mp.config.db_username, password: mp.config.db_password, database: mp.config.db_name, connectionLimit: mp.config.db_connectionLimit, multipleStatements: true});
+mp.db = require('mysql2/promise').createPool({host: mp.settings.db_host, user: mp.settings.db_username, password: mp.settings.db_password, database: mp.settings.db_name, connectionLimit: mp.settings.db_connectionLimit, multipleStatements: true});
 mp.test = require('./test.js');
 require('./authentication.js');
 
