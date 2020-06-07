@@ -8,7 +8,10 @@ mp.events.add('server:registerAccount', async (player, username, email, password
                 await attemptRegister(player, username, email, password).then(res => {
                     if(res){
                         console.log(`${username} has registered a new account.`)
-                        clearTimeout(player.idleKick);
+                        if (player.idleKick) { 
+                            clearTimeout(player.idleKick);
+                            player.idleKick = null;
+                        }
                         mp.events.call("server:loadAccount", player, username);
                         player.call('client:loginHandler', ['registered']);
                     } else {
@@ -34,7 +37,10 @@ mp.events.add('server:loginAccount', async (player, username, password) => {
             await attemptLogin(username, password).then(res => {
                 if(res){
                     console.log(`${username} has successfully logged in.`);
-                    clearTimeout(player.idleKick);
+                    if (player.idleKick) { 
+                        clearTimeout(player.idleKick);
+                        player.idleKick = null;
+                    }
                     mp.events.call("server:loadAccount", player, username);
                     player.call('client:loginHandler', ['success']);
                 } else {
@@ -50,7 +56,7 @@ mp.events.add('server:loginAccount', async (player, username, password) => {
 
 mp.events.add('server:loadAccount', async (player, username) => {
     try {
-        await server.db.query('SELECT * FROM `accounts` WHERE `username` = ?', [username]).then(([rows]) => {
+        await mp.db.query('SELECT * FROM `accounts` WHERE `username` = ?', [username]).then(([rows]) => {
             player.sqlID = rows[0].ID;
             player.name = username;
             player.setVariable("loggedIn", true);
@@ -66,12 +72,12 @@ mp.events.add('playerJoin', (player) => {
 function attemptRegister(player, username, email, pass){
     return new Promise(async function(resolve, reject){
         try {
-            await server.db.query('SELECT * FROM `accounts` WHERE `username` = ? OR `email` = ?', [username, email]).then(([rows]) => {
+            await mp.db.query('SELECT * FROM `accounts` WHERE `username` = ? OR `email` = ?', [username, email]).then(([rows]) => {
                 return rows.length === 0;
             }).then(function(result){
                 if(result){
                     bcrypt.hash(pass, saltRounds).then(async function(hash){
-                        await server.db.query('INSERT INTO `accounts` SET `username` = ?, `email` = ?, `password` = ?, `socialClub` = ?, `socialClubId` = ?', [username, email, hash, player.socialClub, player.rgscId]).then(() => {
+                        await mp.db.query('INSERT INTO `accounts` SET `username` = ?, `email` = ?, `password` = ?, `socialClub` = ?, `socialClubId` = ?', [username, email, hash, player.socialClub, player.rgscId]).then(() => {
                             resolve(true);
                         }).catch(e => reject(`[MySQL] ERROR: ${e.sqlMessage}\n[MySQL] QUERY: ${e.sql}`));
                     }).catch(e => reject(e));
@@ -86,7 +92,7 @@ function attemptRegister(player, username, email, pass){
 function attemptLogin(username, password){
     return new Promise(async function(resolve){
         try {
-            await server.db.query('SELECT `username`, `password` FROM `accounts` WHERE `username` = ?; UPDATE `accounts` SET `lastActive` = now() WHERE username = ?', [username, username]).then(([rows]) => {
+            await mp.db.query('SELECT `username`, `password` FROM `accounts` WHERE `username` = ?; UPDATE `accounts` SET `lastActive` = now() WHERE username = ?', [username, username]).then(([rows]) => {
                 return rows;
             }).then(function(result){
                 if(result[0].length != 0){    //  Account found
@@ -107,7 +113,10 @@ function validEmail(email) {
 }
 
 function resetTimeout(user){
-    clearTimeout(user.idleKick);
+    if (user.idleKick) {
+        clearTimeout(user.idleKick);
+        user.idleKick = null;
+    }
     timeoutKick(user);
 }
 
