@@ -1,7 +1,0 @@
-{
-    "db_host": "localhost",
-    "db_name": "ragemp-database",
-    "db_username": "root",
-    "db_password": "",
-    "db_connectionLimit": 200
-}
