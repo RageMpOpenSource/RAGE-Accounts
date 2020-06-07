@@ -16,7 +16,7 @@ mp.colors = {
 }
 
 //  Step 2 - Obtaining and loading config file
-if(!fs.existsSync(__dirname + '/settings.json')){
+if (!fs.existsSync(__dirname + '/settings.json')) {
     console.log(`${mp.colors.red('You do not have a \'settings.json\' file setup.')}`);
     process.exit(0);
 } else {
