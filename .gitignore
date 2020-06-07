@@ -4,4 +4,4 @@ conf.json
 bin/
 client_packages/.listcache
 node_modules
-packages/template/config.json
+packages/template/settings.json
