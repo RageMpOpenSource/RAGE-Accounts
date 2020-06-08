@@ -36,11 +36,14 @@ require('./authentication.js');
 })();
 
 async function initializeDatabase(){
-    await mp.db.getConnection().then(conn => {
-        console.log(mp.colors.green('Database Connected successfully.'));
-        conn.release();
-        return;
-    }).catch(err => {
+    try {
+        const conn = await mp.db.getConnection();
+        if(conn){
+            console.log(mp.colors.green('Database Connected successfully.'));
+            conn.release();
+            return;
+        }
+    } catch(err) {
         console.log(mp.colors.red('Database failed to connect'))
         if(!err.code) return console.log(mp.colors.red(err));
         switch(err.code){
@@ -69,5 +72,5 @@ async function initializeDatabase(){
                 console.log(err);
                 break;
             }
-    });
+    }
 }

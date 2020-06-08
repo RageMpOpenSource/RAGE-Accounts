@@ -2,52 +2,50 @@ const bcrypt = require('bcryptjs');
 const saltRounds = 10;
 
 mp.events.add('server:registerAccount', async (player, username, email, password) => {
-    try {
-        if(username.length >= 3 && password.length >= 5){
-            if(validEmail(email)){
-                await attemptRegister(player, username, email, password).then(res => {
-                    if(res){
-                        console.log(`${username} has registered a new account.`)
-                        if (player.idleKick) { 
-                            clearTimeout(player.idleKick);
-                            player.idleKick = null;
-                        }
-                        mp.events.call("server:loadAccount", player, username);
-                        player.call('client:loginHandler', ['registered']);
-                    } else {
-                        player.call('client:loginHandler', ['takeninfo']);
-                        resetTimeout(player);
+    if(username.length >= 3 && password.length >= 5){
+        if(validEmail(email)){
+            try {
+                const res = await attemptRegister(player, username, email, password);
+                if(res){
+                    console.log(`${username} has registered a new account.`)
+                    if (player.idleKick) { 
+                        clearTimeout(player.idleKick);
+                        player.idleKick = null;
                     }
-                }).catch(e => console.log(e));
-            } else {
-                player.call('client:loginHandler', ['invalid-info']);
-                resetTimeout(player);
-            }
+                    mp.events.call("server:loadAccount", player, username);
+                    player.call('client:loginHandler', ['registered']);
+                } else {
+                    player.call('client:loginHandler', ['takeninfo']);
+                    resetTimeout(player);
+                }
+            } catch(e) { console.log(e) };
         } else {
-            player.call('client:loginHandler', ['tooshort']);
+            player.call('client:loginHandler', ['invalid-info']);
             resetTimeout(player);
-        }    
-    } catch(e) { console.log(e) };
+        }
+    } else {
+        player.call('client:loginHandler', ['tooshort']);
+        resetTimeout(player);
+    }    
 });
 
 mp.events.add('server:loginAccount', async (player, username, password) => {
     let loggedAccount = mp.players.toArray().find(p => p.name == username);
     if(!loggedAccount){
         try {
-            await attemptLogin(username, password).then(res => {
-                if(res){
-                    console.log(`${username} has successfully logged in.`);
-                    if (player.idleKick) { 
-                        clearTimeout(player.idleKick);
-                        player.idleKick = null;
-                    }
-                    mp.events.call("server:loadAccount", player, username);
-                    player.call('client:loginHandler', ['success']);
-                } else {
-                    player.call('client:loginHandler', ['incorrectinfo']);
-                    resetTimeout(player);
+            const res = await attemptLogin(username, password);
+            if(res){
+                console.log(`${username} has successfully logged in.`);
+                if (player.idleKick) { 
+                    clearTimeout(player.idleKick);
+                    player.idleKick = null;
                 }
-            });
+                mp.events.call("server:loadAccount", player, username);
+                player.call('client:loginHandler', ['success']);
+            } else {
+                player.call('client:loginHandler', ['incorrectinfo']);
+                resetTimeout(player);
+            }
         } catch(e) { console.log(e) };
     } else {
         player.call('client:loginHandler', ['logged']);
@@ -56,12 +54,13 @@ mp.events.add('server:loginAccount', async (player, username, password) => {
 
 mp.events.add('server:loadAccount', async (player, username) => {
     try {
-        await mp.db.query('SELECT * FROM `accounts` WHERE `username` = ?', [username]).then(([rows]) => {
+        const [rows] = await mp.db.query('SELECT * FROM `accounts` WHERE `username` = ?', [username]);
+        if(rows.length != 0){
             player.sqlID = rows[0].ID;
             player.name = username;
             player.setVariable("loggedIn", true);
-        });
-    } catch(e) { console.log(e) };
+        }
+    } catch(e) { console.log(`[MySQL] ERROR: ${e.sqlMessage}\n[MySQL] QUERY: ${e.sql}`) };
 });
 
 mp.events.add('playerJoin', (player) => {
