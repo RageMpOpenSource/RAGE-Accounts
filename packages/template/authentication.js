@@ -73,8 +73,8 @@ mp.events.add('playerQuit', async (player) => {
     if(player.getVariable('loggedIn') === false) return;
     let name = player.name;
     try {
-        const [stuff] = await mp.db.query('UPDATE `accounts` SET `position` = ? WHERE username = ?', [JSON.stringify(player.position), player.name]);
-        if(stuff.affectedRows === 1) console.log(`${name}'s data successfully saved.`);
+        const [status] = await mp.db.query('UPDATE `accounts` SET `position` = ? WHERE username = ?', [JSON.stringify(player.position), player.name]);
+        if(status.affectedRows === 1) console.log(`${name}'s data successfully saved.`);
         console.log(`${name} has quit the server.`);
     } catch(e) { console.log(e) }
 })
