@@ -3,5 +3,6 @@
     "db_name": "ragemp-database",
     "db_username": "root",
     "db_password": "",
-    "db_connectionLimit": 200
+    "db_connectionLimit": 200,
+    "defaultSpawnPosition": {"x":-1037.73, "y":-2735.85, "z":13.75}
 }

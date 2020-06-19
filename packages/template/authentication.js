@@ -58,6 +58,7 @@ mp.events.add('server:loadAccount', async (player, username) => {
         if(rows.length != 0){
             player.sqlID = rows[0].ID;
             player.name = username;
+            rows[0].position === null ? player.position = new mp.Vector3(mp.settings.defaultSpawnPosition) : player.position = new mp.Vector3(JSON.parse(rows[0].position));
             player.setVariable("loggedIn", true);
         }
     } catch(e) { console.log(`[MySQL] ERROR: ${e.sqlMessage}\n[MySQL] QUERY: ${e.sql}`) };
@@ -67,6 +68,16 @@ mp.events.add('playerJoin', (player) => {
     player.setVariable("loggedIn", false);
     timeoutKick(player);
 });
+
+mp.events.add('playerQuit', async (player) => {
+    if(player.getVariable('loggedIn') === false) return;
+    let name = player.name;
+    try {
+        const [stuff] = await mp.db.query('UPDATE `accounts` SET `position` = ? WHERE username = ?', [JSON.stringify(player.position), player.name]);
+        if(stuff.affectedRows === 1) console.log(`${name}'s data successfully saved.`);
+        console.log(`${name} has quit the server.`);
+    } catch(e) { console.log(e) }
+})
 
 function attemptRegister(player, username, email, pass){
     return new Promise(async function(resolve, reject){

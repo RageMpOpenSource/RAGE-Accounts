@@ -7,5 +7,6 @@ CREATE TABLE `accounts` (
     `registerDate` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `lastActive` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `socialClub` VARCHAR(20) NOT NULL,
-    `socialClubId` INT NOT NULL
+    `socialClubId` INT NOT NULL,
+    `position` VARCHAR(100)
 );
