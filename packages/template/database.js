@@ -39,7 +39,7 @@ async function initializeDatabase(){
 }
 
 mp.db.on('enqueue', function () {
-    console.log(`${mp.colors.red('[WARNING] You have hit the database connection limit and queries are waiting to be executed, this results in slower results for any pending queries.')}`);
+    console.log(`${'[WARNING] You have hit the database connection limit and queries are waiting to be executed, this results in slower results for any pending queries.'}`);
 });
 
 module.exports = {
