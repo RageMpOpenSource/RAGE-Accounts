@@ -19,7 +19,11 @@ const database = require('./database.js');
 
 //  Step 4 - Wait for everything to load, then allow connections once all is loaded
 (async () => {
-    await database.initializeDatabase();
-    await mp.test.init();
-    mp.events.delayInitialization = false;    //  Players cannot join until this is false
+    try {
+        await database.initializeDatabase();
+        await mp.test.init();
+        mp.events.delayInitialization = false;    //  Players cannot join until this is false
+    } catch(e) {
+        console.log(e)
+    }
 })();

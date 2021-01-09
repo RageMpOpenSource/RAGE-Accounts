@@ -68,7 +68,7 @@ mp.events.add('client:showLoginScreen', () => {
     mp.gui.chat.show(false);
     setTimeout(() => { mp.gui.cursor.show(true, true); }, 500);
     mp.game.ui.displayRadar(false);
-    mp.events.call('client:enableCamera');
+    mp.events.call('client:enableLoginCamera');
 });
 
 mp.events.add('client:hideLoginScreen', () => {
@@ -79,10 +79,10 @@ mp.events.add('client:hideLoginScreen', () => {
     mp.gui.chat.show(true);
     mp.gui.cursor.show(false, false);
     mp.game.ui.displayRadar(true);
-    mp.events.call("client:disableCamera");
+    mp.events.call("client:disableLoginCamera");
 });
 
-mp.events.add('client:enableCamera', () => {
+mp.events.add('client:enableLoginCamera', () => {
     loginCam = mp.cameras.new('default', new mp.Vector3(0, 0, 0), new mp.Vector3(0, 0, 0), 40);
     mp.players.local.position = new mp.Vector3(-1757.12, -739.53, 10);
     mp.players.local.freezePosition(true);
@@ -93,7 +93,7 @@ mp.events.add('client:enableCamera', () => {
     mp.game.cam.renderScriptCams(true, false, 0, true, false);
 });
 
-mp.events.add('client:disableCamera', () => {
+mp.events.add('client:disableLoginCamera', () => {
     loginCam.destroy();
     mp.game.cam.renderScriptCams(false, false, 0, false, false);
     mp.players.local.freezePosition(false);
