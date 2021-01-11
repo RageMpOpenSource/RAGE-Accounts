@@ -1,67 +1,54 @@
 const bcrypt = require('bcryptjs');
 const saltRounds = 10;
 
+//  Called when a player submits the Registration HTML form
 mp.events.add('server:registerAccount', async (player, username, email, password) => {
+    //  Check username and password lengths
     if(username.length >= 3 && password.length >= 5){
-        if(validEmail(email)){
-            try {
-                const res = await attemptRegister(player, username, email, password);
-                if(res){
-                    console.log(`${username} has registered a new account.`)
-                    if (player.idleKick) { 
-                        clearTimeout(player.idleKick);
-                        player.idleKick = null;
-                    }
-                    mp.events.call("server:loadAccount", player, username);
-                    player.call('client:loginHandler', ['registered']);
-                } else {
-                    player.call('client:loginHandler', ['takeninfo']);
-                    resetTimeout(player);
-                }
-            } catch(e) { console.log(e) };
-        } else {
-            player.call('client:loginHandler', ['invalid-info']);
-            resetTimeout(player);
-        }
+        //  Check for an invalid email
+        if(!validEmail(email)) return failedLoginHandle(player, 'invalid-info');
+
+        try {
+            const res = await attemptRegister(player, username, email, password);
+            if(res){
+                console.log(`${username} has registered a new account.`)
+                successLoginHandle(player, 'registered', username);
+            } else {
+                failedLoginHandle(player, 'takeninfo');
+            }
+        } catch(e) { errorHandler(e) };
     } else {
-        player.call('client:loginHandler', ['tooshort']);
-        resetTimeout(player);
+        failedLoginHandle(player, 'tooshort');
     }    
 });
 
+//  Called when a user wants to login to an account
+//  NOTE: This event doesn't load the data onto the account, use server:loadAccount
 mp.events.add('server:loginAccount', async (player, username, password) => {
-    let loggedAccount = mp.players.toArray().find(p => p.name == username);
-    if(!loggedAccount){
-        try {
-            const res = await attemptLogin(username, password);
-            if(res){
-                console.log(`${username} has successfully logged in.`);
-                if (player.idleKick) { 
-                    clearTimeout(player.idleKick);
-                    player.idleKick = null;
-                }
-                mp.events.call("server:loadAccount", player, username);
-                player.call('client:loginHandler', ['success']);
-            } else {
-                player.call('client:loginHandler', ['incorrectinfo']);
-                resetTimeout(player);
-            }
-        } catch(e) { console.log(e) };
-    } else {
-        player.call('client:loginHandler', ['logged']);
-    }
+    //  Loop through players array to find any matching usernames currently logged in
+    let loggedAccount = mp.players.toArray().find(p => p.getVariable('username') === username);
+    if(loggedAccount) return player.call('client:loginHandler', ['logged']);
+
+    try {
+        //  Returns true/false if the login was successful or not
+        const res = await attemptLogin(username, password);
+        res ? successLoginHandle(player, 'success', username) : failedLoginHandle(player, 'incorrectinfo');
+    } catch(e) { errorHandler(e) };
 });
 
+//  Called after successfully logging into an account and loads the data onto the account
 mp.events.add('server:loadAccount', async (player, username) => {
     try {
-        const [rows] = await mp.db.query('SELECT * FROM `accounts` WHERE `username` = ?', [username]);
+        const [rows] = await mp.db.query('SELECT * FROM `accounts` WHERE `username` = ?; UPDATE `accounts` SET `lastActive` = now() WHERE username = ?', [username, username]);
         if(rows.length != 0){
-            player.sqlID = rows[0].ID;
+            player.sqlID = rows[0][0].ID;
             player.name = username;
-            rows[0].position === null ? player.position = new mp.Vector3(mp.settings.defaultSpawnPosition) : player.position = new mp.Vector3(JSON.parse(rows[0].position));
+            player.setVariable('username', username);
+            //  If a position doesn't exist in the database, load them onto the default spawn position
+            rows[0][0].position === null ? player.position = new mp.Vector3(mp.settings.defaultSpawnPosition) : player.position = new mp.Vector3(JSON.parse(rows[0][0].position));
             player.setVariable("loggedIn", true);
         }
-    } catch(e) { console.log(`[MySQL] ERROR: ${e.sqlMessage}\n[MySQL] QUERY: ${e.sql}`) };
+    } catch(e) { errorHandler(e) };
 });
 
 mp.events.add('playerJoin', (player) => {
@@ -69,6 +56,7 @@ mp.events.add('playerJoin', (player) => {
     timeoutKick(player);
 });
 
+//  Saves the account data upon player quitting (only logged in users)
 mp.events.add('playerQuit', async (player) => {
     if(player.getVariable('loggedIn') === false) return;
     let name = player.name;
@@ -76,9 +64,10 @@ mp.events.add('playerQuit', async (player) => {
         const [status] = await mp.db.query('UPDATE `accounts` SET `position` = ? WHERE username = ?', [JSON.stringify(player.position), player.name]);
         if(status.affectedRows === 1) console.log(`${name}'s data successfully saved.`);
         console.log(`${name} has quit the server.`);
-    } catch(e) { console.log(e) }
+    } catch(e) { errorHandler(e) }
 })
 
+//  Runs when attempting to register a new account
 function attemptRegister(player, username, email, pass){
     return new Promise(async function(resolve, reject){
         try {
@@ -95,33 +84,45 @@ function attemptRegister(player, username, email, pass){
                     resolve(false);
                 }
             }).catch(e => reject(`[MySQL] ERROR: ${e.sqlMessage}\n[MySQL] QUERY: ${e.sql}`));
-        } catch(e) { console.log(e) }
+        } catch(e) { errorHandler(e) }
     });
 }
 
+//  Runs when attempting to login to an account
 function attemptLogin(username, password){
     return new Promise(async function(resolve){
         try {
-            await mp.db.query('SELECT `username`, `password` FROM `accounts` WHERE `username` = ?; UPDATE `accounts` SET `lastActive` = now() WHERE username = ?', [username, username]).then(([rows]) => {
+            await mp.db.query('SELECT `username`, `password` FROM `accounts` WHERE `username` = ?', [username]).then(([rows]) => {
                 return rows;
             }).then(function(result){
-                if(result[0].length != 0){    //  Account found
-                    bcrypt.compare(password, result[0][0].password).then(function(res){
+                if(result.length != 0){    //  Account found
+                    bcrypt.compare(password, result[0].password).then(function(res){
                         res ? resolve(true) : resolve(false);
                     });
                 } else {    //  No account found
                     resolve(false);
                 }
             });
-        } catch(e) { console.log(e) }
+        } catch(e) { errorHandler(e) }
     });
 }
 
-function validEmail(email) {
-    let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(String(email).toLowerCase());
+//  Error handler to handler an error depending if it's an SQL error or JS error
+function errorHandler(e) {
+    if(e.sql){
+        console.log(`[MySQL] ERROR: ${e.sqlMessage}\n[MySQL] QUERY: ${e.sql}`)
+    } else {
+        console.log(`Error: ${e}`)
+    }
 }
 
+//  Runs when a failed login attempt has occurred
+function failedLoginHandle(player, handle){
+    player.call('client:loginHandler', [handle]);
+    resetTimeout(player);
+}
+
+//  Resets the idle kick timeout players have upon joining the server
 function resetTimeout(user){
     if (user.idleKick) {
         clearTimeout(user.idleKick);
@@ -130,10 +131,28 @@ function resetTimeout(user){
     timeoutKick(user);
 }
 
+//  Runs when a successful login attempt has occurred
+function successLoginHandle(player, handle, username){
+    if (player.idleKick) { 
+        clearTimeout(player.idleKick);
+        player.idleKick = null;
+    }
+    mp.events.call("server:loadAccount", player, username);
+    player.call('client:loginHandler', [handle]);
+    console.log(`${username} has successfully logged in.`);
+}
+
+//  Sets an idle kick timeout users receive upon joining the server and are waiting to login
 function timeoutKick(user){
     user.idleKick = setTimeout(() => {
         user.call('client:hideLoginScreen');
         user.outputChatBox(`You were kicked for idling too long.`);
         user.kick();
     }, 60000);
+}
+
+//  Checks for a valid email during registration/login
+function validEmail(email) {
+    let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
 }
