@@ -68,43 +68,35 @@ mp.events.add('playerQuit', async (player) => {
 })
 
 //  Runs when attempting to register a new account
-function attemptRegister(player, username, email, pass){
-    return new Promise(async function(resolve, reject){
-        try {
-            await mp.db.query('SELECT * FROM `accounts` WHERE `username` = ? OR `email` = ?', [username, email]).then(([rows]) => {
-                return rows.length === 0;
-            }).then(function(result){
-                if(result){
-                    bcrypt.hash(pass, saltRounds).then(async function(hash){
-                        await mp.db.query('INSERT INTO `accounts` SET `username` = ?, `email` = ?, `password` = ?, `socialClub` = ?, `socialClubId` = ?', [username, email, hash, player.socialClub, player.rgscId]).then(() => {
-                            resolve(true);
-                        }).catch(e => reject(`[MySQL] ERROR: ${e.sqlMessage}\n[MySQL] QUERY: ${e.sql}`));
-                    }).catch(e => reject(e));
-                } else {
-                    resolve(false);
-                }
-            }).catch(e => reject(`[MySQL] ERROR: ${e.sqlMessage}\n[MySQL] QUERY: ${e.sql}`));
-        } catch(e) { errorHandler(e) }
-    });
+async function attemptRegister(player, username, email, pass){
+    try {
+        const [rows] = await mp.db.query('SELECT * FROM `accounts` WHERE `username` = ? OR `email` = ?', [username, email]);
+
+        //  If an account is found, return false as it is taken
+        if(rows.length !== 0) return false;
+
+        const hash = await bcrypt.hash(pass, saltRounds);
+        
+        const result = await mp.db.query('INSERT INTO `accounts` SET `username` = ?, `email` = ?, `password` = ?, `socialClub` = ?, `socialClubId` = ?', [username, email, hash, player.socialClub, player.rgscId]);
+
+        //  An affected row means a row has been successfully inserted into the table
+        return result[0].affectedRows === 1;
+    } catch(e) { errorHandler(e) }
 }
 
 //  Runs when attempting to login to an account
-function attemptLogin(username, password){
-    return new Promise(async function(resolve){
-        try {
-            await mp.db.query('SELECT `username`, `password` FROM `accounts` WHERE `username` = ?', [username]).then(([rows]) => {
-                return rows;
-            }).then(function(result){
-                if(result.length != 0){    //  Account found
-                    bcrypt.compare(password, result[0].password).then(function(res){
-                        res ? resolve(true) : resolve(false);
-                    });
-                } else {    //  No account found
-                    resolve(false);
-                }
-            });
-        } catch(e) { errorHandler(e) }
-    });
+async function attemptLogin(username, password){
+    try {
+        const [rows] = await mp.db.query('SELECT `username`, `password` FROM `accounts` WHERE `username` = ?', [username]);
+
+        //  If no account found, return false
+        if(rows.length === 0) return false;
+
+        //  Returns true/false if the password matches
+        const res = await bcrypt.compare(password, rows[0].password);
+
+        return res;
+    } catch(e){ errorHandler(e) }
 }
 
 //  Error handler to handler an error depending if it's an SQL error or JS error
