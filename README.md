@@ -23,6 +23,7 @@ A MySQL boilerplate to quickly create an account system without all the work. Th
     - I won't be going into how to do this, Google "How to set up a MySQL server" if you don't know how to do this as I won't be offering support.
 6. Run your server, if there are no errors and it prints "Database connected successfully" then you're all done.
 
+## Extra Information
 ## Database Schema
 - Username
 - Email
@@ -41,6 +42,15 @@ A MySQL boilerplate to quickly create an account system without all the work. Th
 - loggedIn : Boolean (True when the player is logged in, False when they're on the login/registration page)
 - username : String (Holds the players username, the one they login with and not the name they join the server with. This is used for checking if this player is already logged in.
 - sqlID (Server-side only) : Integer (Holds the player's Database/SQL ID)
+
+## Changing login/register pages
+These can easily be changed out, all you have to do is send data to the client calling `client:registerData` or `client:loginData`
+- mp.trigger('client:loginData', loginName, loginPass);
+- mp.trigger('client:registerData', registerName, registerEmail, registerPass);
+
+From inside CEF I call a function `sendAccountInfo(state)` where state is either 0 (Login) or 1(Register) and this function then grabs the data filled out inside the form to then send it to either of the events mentioned above. This function can be found inside `client_packages/cef/login/main.js`
+
+
 ## Delayed Initilisation
 RAGE:MP introduced a [delayed initilisation](https://wiki.rage.mp/index.php?title=Events::delayInitialization) feature so servers can properly load their resources before allowing connections.
 
