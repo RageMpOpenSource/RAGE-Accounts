@@ -8,57 +8,33 @@ mp.events.add('client:registerData', (username, email, password) => {
     mp.events.callRemote("server:registerAccount", username, email, password);
 });
 
-
 mp.events.add('client:loginHandler', (handle) => {
-    switch(handle){
-        case 'success':
-        {
-            mp.gui.chat.push('Welcome back to the server!');
-            mp.events.call('client:hideLoginScreen');
-            break;
-        }
-        case 'registered':
-        {
-            mp.gui.chat.push('Registration successful. Welcome to the server!');
-            mp.events.call('client:hideLoginScreen');
-            break;
-        }
-        case 'incorrectinfo':
-        {
-            loginBrowser.execute(`$('.incorrect-info').show(); $('#loginBtn').show();`);
-            break;
-        }
-        case 'takeninfo':
-        {
-            loginBrowser.execute(`$('.taken-info').show(); $('#registerBtn').show();`);
-            break;
-        }
-        case 'tooshort':
-        {
-            loginBrowser.execute(`$('.short-info').show(); $('#registerBtn').show();`);
-            break;
-        }
-        case 'logged':
-        {
-            loginBrowser.execute(`$('.logged').show(); $('#loginBtn').show();`);
-            break;
-        }
-        case 'invalid-info':
-        {
-            loginBrowser.execute(`$('.invalid-info').show(); $('#registerBtn').show();`);
-            break;
-        }
-        case 'banned':
-        {
-            loginBrowser.execute(`$('.banned').show();`);
-            break;
-        }
-        default:
-        {
-            break;
-        }
-        }
-});
+	switch (handle) {
+		case 'success': case 'registered':
+			mp.events.call('c.hideLoginScreen')
+			break
+		case 'incorrectinfo':
+			loginBrowser.call('b.throwError', 'incorrectinfo')
+			break
+		case 'takeninfo':
+			loginBrowser.call('b.throwError', 'takeninfo')
+			break
+		case 'tooshort':
+			loginBrowser.call('b.throwError', 'tooshort')
+			break
+		case 'logged':
+			loginBrowser.call('b.throwError', 'logged')
+			break
+		case 'invalid-info':
+			loginBrowser.call('b.throwError', 'invalid-info')
+			break
+		case 'banned':
+			loginBrowser.call('b.throwError', 'banned')
+			break
+		default:
+			break
+	}
+})
 
 mp.events.add('client:showLoginScreen', () => {
     loginBrowser = mp.browsers.new('package://cef/login/index.html');
