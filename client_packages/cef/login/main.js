@@ -1,23 +1,22 @@
-function sendAccountInfo(state){
-    $('.alert-danger').hide();
-    if(state === 0){    //Login State
-        let loginName = document.getElementById('loginName');
-        let loginPass = document.getElementById('loginPass');
-        $('#loginBtn').hide();
-    
-        mp.trigger('client:loginData', loginName.value, loginPass.value);
-    } else {    //Register State
-        let registerName = document.getElementById('registerName');
-        let registerEmail = document.getElementById('registerEmail');
-        let registerPass = document.getElementById('registerPass');
-        let registerPassCompare = document.getElementById('registerPass2');
-        $('#registerBtn').hide();
+$('.throwError').hide()
 
-        if(registerPass.value === registerPassCompare.value){
-            mp.trigger('client:registerData', registerName.value, registerEmail.value, registerPass.value);
-        } else {
-            $('.password-mismatch').show();
-            $('#registerBtn').show();
-        }
-    }
+mp.events.add('b.throwError', (err) => {
+	$('.throwError').show().html(err)
+})
+
+function sendAccountInfo(state) {
+	switch (state) {
+		case 0:
+			mp.events.call('client:loginData', $('#loginName').val(), $('#loginPass').val())
+			break
+		case 1:
+			if ($('#registerPass').val() === $('#registerPass2').val()) {
+				mp.events.call('client:registerData', $('#registerName').val(), $('#registerEmail').val(), $('#registerPass').val())
+			} else {
+				mp.events.call('b.throwError', 'password-mismatch')
+			}
+			break
+		default:
+			break
+	}
 }
