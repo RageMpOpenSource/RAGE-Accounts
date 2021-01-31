@@ -2,38 +2,22 @@ var loginBrowser, loginCam;
 
 mp.events.add('client:loginData', (username, password) => {
     mp.events.callRemote("server:loginAccount", username, password);
-});
+})
 
 mp.events.add('client:registerData', (username, email, password) => {
     mp.events.callRemote("server:registerAccount", username, email, password);
-});
+})
 
 mp.events.add('client:loginHandler', (handle) => {
-	switch (handle) {
-		case 'success': case 'registered':
-			mp.events.call('c.hideLoginScreen')
-			break
-		case 'incorrectinfo':
-			loginBrowser.call('b.throwError', 'incorrectinfo')
-			break
-		case 'takeninfo':
-			loginBrowser.call('b.throwError', 'takeninfo')
-			break
-		case 'tooshort':
-			loginBrowser.call('b.throwError', 'tooshort')
-			break
-		case 'logged':
-			loginBrowser.call('b.throwError', 'logged')
-			break
-		case 'invalid-info':
-			loginBrowser.call('b.throwError', 'invalid-info')
-			break
-		case 'banned':
-			loginBrowser.call('b.throwError', 'banned')
-			break
-		default:
-			break
-	}
+    switch(handle){
+		case 'success':
+		case 'registered':
+            mp.events.call('client:hideLoginScreen');
+            break;
+        default:
+            loginBrowser.call('b.throwError', handle);
+            break;
+    }
 })
 
 mp.events.add('client:showLoginScreen', () => {
