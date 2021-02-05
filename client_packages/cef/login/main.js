@@ -1,3 +1,12 @@
+const errorMsg = {
+	"password-mismatch": "Passwords do not match, please type them again.",
+	"logged": "That account is already logged in.",
+	"invalid-info": "The email you provided is not valid.",
+	"takeninfo": "The username or email you have provided is taken.",
+	"tooshort": "The username or password you have provided is too short",
+	"incorrectinfo": "The username or password you have entered is incorrect."
+}
+
 $('.alert').hide();
 
 $('form').submit(function(e){
@@ -23,7 +32,7 @@ function sendAccountInfo(state) {
 }
 
 function throwError(err) {
-	$('.alert').show().html(err);
+	$('.alert').show().html(errorMsg[err]);
 }
 
 mp.events.add('b.throwError', (err) => {
